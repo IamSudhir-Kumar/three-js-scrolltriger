@@ -1,10 +1,11 @@
 import * as THREE from "three";
-// import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 import fragment from "./shader/fragment.glsl";
 import vertex from "./shader/vertex.glsl";
 import * as dat from "dat.gui";
 
+import model from "./model/model.glb";
 
 import { TimelineMax } from "gsap";
 let OrbitControls = require("three-orbit-controls")(THREE);
@@ -50,6 +51,13 @@ export default class Sketch {
     this.resize();
     this.render();
     // this.settings();
+
+    this.loader = new GLTFLoader();
+
+  //   this.loader.load(model, (gltf) => {
+     
+  //   }
+  // );
   }
 
   settings() {
