@@ -6,10 +6,11 @@ import vertex from "./shader/vertex.glsl";
 import * as dat from "dat.gui";
 
 import model from "./model/model.glb";
+import firstTexture from "./texture/13416.jpg";
 
 import { TimelineMax } from "gsap";
 let OrbitControls = require("three-orbit-controls")(THREE);
-
+// console.log(model);
 export default class Sketch {
   constructor(selector) {
     this.scene = new THREE.Scene();
@@ -19,7 +20,7 @@ export default class Sketch {
     this.height = window.innerHeight;
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(this.width, this.height);
-    this.renderer.setClearColor(0xeeeeee, 1);
+    this.renderer.setClearColor("black", 1);
 
     this.container = document.getElementById("container");
     this.width = this.container.offsetWidth;
@@ -36,7 +37,7 @@ export default class Sketch {
     // var frustumSize = 10;
     // var aspect = window.innerWidth / window.innerHeight;
     // this.camera = new THREE.OrthographicCamera( frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, -1000, 1000 );
-    this.camera.position.set(0, 0, 2);
+    this.camera.position.set(0, 0, 1.2);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.time = 0;
 
@@ -54,10 +55,19 @@ export default class Sketch {
 
     this.loader = new GLTFLoader();
 
-  //   this.loader.load(model, (gltf) => {
-     
-  //   }
-  // );
+    this.loader.load(model, (gltf) => {
+     this.scene.add(gltf.scene);
+     gltf.scene.scale.set(0.08, 0.08, 0.08);
+     gltf.scene.position.y = -0.6;
+     gltf.scene.traverse((o) => {
+       if (o.isMesh) {
+         o.material = this.material;
+         console.log(o);
+       }
+     }
+      );
+    }
+  );
   }
 
   settings() {
@@ -124,6 +134,7 @@ export default class Sketch {
       side: THREE.DoubleSide,
       uniforms: {
         time: { type: "f", value: 0 },
+        firstTexture: { type: "t", value: new THREE.TextureLoader().load(firstTexture) },
         resolution: { type: "v4", value: new THREE.Vector4() },
         uvRate1: {
           value: new THREE.Vector2(1, 1)
@@ -138,7 +149,7 @@ export default class Sketch {
     this.geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
 
     this.plane = new THREE.Mesh(this.geometry, this.material);
-    this.scene.add(this.plane);
+    // this.scene.add(this.plane);
   }
 
   stop() {
