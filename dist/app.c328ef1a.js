@@ -35036,11 +35036,7 @@ var GLTFLoader = exports.GLTFLoader = function () {
   }();
   return GLTFLoader;
 }();
-},{"../../../build/three.module.js":"node_modules/three/build/three.module.js"}],"shader/fragment.glsl":[function(require,module,exports) {
-module.exports = "#define GLSLIFY 1\nuniform float time;\nuniform float progress;\nuniform sampler2D firstTexture;\nuniform sampler2D texture2;\nuniform vec4 resolution;\nvarying vec2 vUv;\nvarying vec4 vPosition;\nvarying vec3 vNormal;\n\n// Simple hash function\nfloat hash(vec2 p) {\n    p = vec2(dot(p, vec2(127.1, 311.7)),\n             dot(p, vec2(269.5, 183.3)));\n    return -1.0 + 2.0 * fract(sin(p.x * 43758.5453123 + p.y * 37848.99837) * 43758.5453123);\n}\n\n// 2D noise function\nfloat noise(vec2 p) {\n    vec2 i = floor(p);\n    vec2 f = fract(p);\n    \n    vec2 u = f * f * (3.0 - 2.0 * f);\n    \n    return mix(mix(hash(i + vec2(0.0, 0.0)), hash(i + vec2(1.0, 0.0)), u.x),\n               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);\n}\n\n// Lighting calculation\nvec3 calculateLighting(vec3 normal, vec3 lightDir, vec3 lightColor) {\n    float diff = max(dot(normal, lightDir), 0.0);\n    return lightColor * diff;\n}\n\nvoid main() {\n    vec3 lightDir = normalize(vec3(0.902, 0.0745, 0.0745));\n    vec3 lightColor = vec3(0.4039, 0.2784, 0.8549);\n    \n    // Normalized normal\n    vec3 norm = normalize(vNormal);\n    \n    // Calculate lighting\n    vec3 lighting = calculateLighting(norm, lightDir, lightColor);\n\n    // Get texture color\n    vec4 txt = texture2D(firstTexture, vUv);\n\n    // Adding dynamic flow effect to the texture\n    vec2 flowUv = vUv + vec2(sin(time * 0.5), cos(time * 0.5)) * 0.05;\n    vec4 flowTxt = texture2D(firstTexture, flowUv);\n\n    // Adding bright noise\n    float n = noise(vUv * 10.0 + time * 0.1);\n    vec3 noiseColor = vec3(n * 0.5 + 0.5);\n\n    // Brightening the texture color\n    vec3 brightColor = flowTxt.rgb * 1.5;\n\n    // Mix the bright texture color with the noise color\n    vec3 finalColor = mix(brightColor, noiseColor, 0.3);\n    \n    // Combine texture color with lighting effect\n    finalColor = mix(finalColor, lighting, 0.5);\n\n    // Ensure the final color is bright and visible\n    finalColor = clamp(finalColor * 1.5, 0.0, 1.0);\n\n    gl_FragColor = vec4(finalColor, 1.0);\n}\n";
-},{}],"shader/vertex.glsl":[function(require,module,exports) {
-module.exports = "#define GLSLIFY 1\nuniform float time;\nvarying vec2 vUv;\nvarying vec4 vPosition;\nvarying vec3 vNormal;\nuniform vec2 pixels;\nfloat PI = 3.1415926535897932384626433832795;\n\nvoid main() {\n    vUv = uv;\n    vNormal = normal;\n    \n    // More dynamic wave effect\n    float waveFrequency = 2.0; // Increase the frequency for more waves\n    float waveAmplitude = 0.02; // Adjust the amplitude for stronger waves\n    float waveSpeed = 2.0; // Adjust the speed for faster movement\n    vec3 newPosition = position;\n    \n    // Apply a dynamic wave based on time and position\n    float waveOffsetX = sin(time * waveSpeed) * 0.1; // Add variation over time\n    float waveOffsetY = cos(time * waveSpeed) * 0.1; // Add variation over time\n    newPosition.x += cos((newPosition.y + waveOffsetY) * waveFrequency + time + waveOffsetX) * waveAmplitude;\n    newPosition.y += sin((newPosition.x + waveOffsetX) * waveFrequency + time + waveOffsetY) * waveAmplitude;\n\n    // Compute the final position\n    vPosition = modelViewMatrix * vec4(newPosition, 1.0);\n    gl_Position = projectionMatrix * vPosition;\n}\n";
-},{}],"node_modules/dat.gui/build/dat.gui.module.js":[function(require,module,exports) {
+},{"../../../build/three.module.js":"node_modules/three/build/three.module.js"}],"node_modules/dat.gui/build/dat.gui.module.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44329,8 +44325,6 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 var THREE = _interopRequireWildcard(require("three"));
 var _GLTFLoader = require("three/examples/jsm/loaders/GLTFLoader.js");
-var _fragment = _interopRequireDefault(require("./shader/fragment.glsl"));
-var _vertex = _interopRequireDefault(require("./shader/vertex.glsl"));
 var dat = _interopRequireWildcard(require("dat.gui"));
 var _model = _interopRequireDefault(require("./model/model.glb"));
 var _ = _interopRequireDefault(require("./texture/13416.jpg"));
@@ -44363,7 +44357,7 @@ var Sketch = exports.default = /*#__PURE__*/function () {
     this.camera = new THREE.PerspectiveCamera(90,
     // Increased FOV for a wider view
     window.innerWidth / window.innerHeight, 0.001, 1000);
-    this.camera.position.set(1, -2, 3); // Adjusted camera position for a better initial view
+    this.camera.position.set(0, 0, 10); // Adjusted camera position for a better initial view
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -44373,6 +44367,7 @@ var Sketch = exports.default = /*#__PURE__*/function () {
     this.time = 0;
     this.paused = false;
     this.setupResize();
+    this.addLights();
     this.addObjects();
     this.resize();
     this.render();
@@ -44380,8 +44375,8 @@ var Sketch = exports.default = /*#__PURE__*/function () {
     this.loader.load(_model.default, function (gltf) {
       _this.model = gltf.scene;
       _this.scene.add(_this.model);
-      _this.model.scale.set(0.9, 0.9, 0.9);
-      _this.model.position.set(1, -0.6, 0);
+      _this.model.scale.set(1, 1, 1); // Medium size
+      _this.model.position.set(0, -8, -1); // Centered position, slightly downward
       gltf.scene.traverse(function (o) {
         if (o.isMesh) {
           o.material = _this.material;
@@ -44414,32 +44409,24 @@ var Sketch = exports.default = /*#__PURE__*/function () {
       this.camera.updateProjectionMatrix();
     }
   }, {
+    key: "addLights",
+    value: function addLights() {
+      var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      this.scene.add(ambientLight);
+      var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(5, 5, 5);
+      this.scene.add(directionalLight);
+    }
+  }, {
     key: "addObjects",
     value: function addObjects() {
-      this.material = new THREE.ShaderMaterial({
-        extensions: {
-          derivatives: "#extension GL_OES_standard_derivatives : enable"
-        },
-        side: THREE.DoubleSide,
-        uniforms: {
-          time: {
-            type: "f",
-            value: 0
-          },
-          firstTexture: {
-            type: "t",
-            value: new THREE.TextureLoader().load(_.default)
-          },
-          resolution: {
-            type: "v4",
-            value: new THREE.Vector4()
-          },
-          uvRate1: {
-            value: new THREE.Vector2(1, 1)
-          }
-        },
-        vertexShader: _vertex.default,
-        fragmentShader: _fragment.default
+      var textureLoader = new THREE.TextureLoader();
+      var normalTexture = textureLoader.load(_.default);
+      this.material = new THREE.MeshStandardMaterial({
+        color: 0x999999,
+        metalness: 0.5,
+        roughness: 0.5,
+        normalMap: normalTexture
       });
       this.geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
       this.plane = new THREE.Mesh(this.geometry, this.material);
@@ -44455,8 +44442,8 @@ var Sketch = exports.default = /*#__PURE__*/function () {
           start: "top top",
           end: "+=" + (sections.length - 1) * window.innerHeight,
           scrub: true,
-          pin: true,
-          markers: true // Add markers for debugging
+          pin: true
+          //markers: true, // Add markers for debugging
         }
       });
       sections.forEach(function (section, index) {
@@ -44465,11 +44452,11 @@ var Sketch = exports.default = /*#__PURE__*/function () {
         var radians = angle * (Math.PI / 180);
         tl.to(_this2.camera.position, {
           duration: 1,
-          x: Math.sin(radians) * 10,
+          x: Math.sin(radians) * 15,
           // Increased camera orbit radius
-          z: Math.cos(radians) * 10,
+          z: Math.cos(radians) * 15,
           // Increased camera orbit radius
-          y: 3,
+          y: 5,
           // Adjusted camera height for a better view
           ease: "power1.inOut",
           onUpdate: function onUpdate() {
@@ -44500,7 +44487,6 @@ var Sketch = exports.default = /*#__PURE__*/function () {
     value: function render() {
       if (this.paused) return;
       this.time += 0.05;
-      this.material.uniforms.time.value = this.time;
       this.controls.update();
       requestAnimationFrame(this.render.bind(this));
       this.renderer.render(this.scene, this.camera);
@@ -44508,7 +44494,7 @@ var Sketch = exports.default = /*#__PURE__*/function () {
   }]);
 }();
 new Sketch("container");
-},{"three":"node_modules/three/build/three.module.js","three/examples/jsm/loaders/GLTFLoader.js":"node_modules/three/examples/jsm/loaders/GLTFLoader.js","./shader/fragment.glsl":"shader/fragment.glsl","./shader/vertex.glsl":"shader/vertex.glsl","dat.gui":"node_modules/dat.gui/build/dat.gui.module.js","./model/model.glb":"model/model.glb","./texture/13416.jpg":"texture/13416.jpg","gsap":"node_modules/gsap/index.js","gsap/ScrollTrigger":"node_modules/gsap/ScrollTrigger.js","three-orbit-controls":"node_modules/three-orbit-controls/index.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"three":"node_modules/three/build/three.module.js","three/examples/jsm/loaders/GLTFLoader.js":"node_modules/three/examples/jsm/loaders/GLTFLoader.js","dat.gui":"node_modules/dat.gui/build/dat.gui.module.js","./model/model.glb":"model/model.glb","./texture/13416.jpg":"texture/13416.jpg","gsap":"node_modules/gsap/index.js","gsap/ScrollTrigger":"node_modules/gsap/ScrollTrigger.js","three-orbit-controls":"node_modules/three-orbit-controls/index.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -44533,7 +44519,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59060" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60875" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];

@@ -1,10 +1,8 @@
 import * as THREE from "three";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import fragment from "./shader/fragment.glsl";
-import vertex from "./shader/vertex.glsl";
 import * as dat from "dat.gui";
 import model from "./model/model.glb";
-import firstTexture from "./texture/13416.jpg";
+import normalMap from "./texture/13416.jpg";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
@@ -29,7 +27,7 @@ export default class Sketch {
       0.001,
       1000
     );
-    this.camera.position.set(1, -2, 3); // Adjusted camera position for a better initial view
+    this.camera.position.set(0, 0, 10); // Adjusted camera position for a better initial view
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -40,6 +38,7 @@ export default class Sketch {
     this.paused = false;
 
     this.setupResize();
+    this.addLights();
     this.addObjects();
     this.resize();
     this.render();
@@ -48,8 +47,8 @@ export default class Sketch {
     this.loader.load(model, (gltf) => {
       this.model = gltf.scene;
       this.scene.add(this.model);
-      this.model.scale.set(0.9, 0.9, 0.9);
-      this.model.position.set(1, -0.6, 0);
+      this.model.scale.set(1, 1, 1); // Medium size
+      this.model.position.set(0, -8, -1); // Centered position, slightly downward
       gltf.scene.traverse((o) => {
         if (o.isMesh) {
           o.material = this.material;
@@ -81,22 +80,24 @@ export default class Sketch {
     this.camera.updateProjectionMatrix();
   }
 
+  addLights() {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    this.scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    this.scene.add(directionalLight);
+  }
+
   addObjects() {
-    this.material = new THREE.ShaderMaterial({
-      extensions: {
-        derivatives: "#extension GL_OES_standard_derivatives : enable"
-      },
-      side: THREE.DoubleSide,
-      uniforms: {
-        time: { type: "f", value: 0 },
-        firstTexture: { type: "t", value: new THREE.TextureLoader().load(firstTexture) },
-        resolution: { type: "v4", value: new THREE.Vector4() },
-        uvRate1: {
-          value: new THREE.Vector2(1, 1)
-        }
-      },
-      vertexShader: vertex,
-      fragmentShader: fragment
+    const textureLoader = new THREE.TextureLoader();
+    const normalTexture = textureLoader.load(normalMap);
+
+    this.material = new THREE.MeshStandardMaterial({
+      color: 0x999999,
+      metalness: 0.5,
+      roughness: 0.5,
+      normalMap: normalTexture
     });
 
     this.geometry = new THREE.PlaneGeometry(1, 1, 1, 1);
@@ -113,7 +114,7 @@ export default class Sketch {
         end: "+=" + (sections.length - 1) * window.innerHeight,
         scrub: true,
         pin: true,
-        markers: true, // Add markers for debugging
+        //markers: true, // Add markers for debugging
       }
     });
 
@@ -125,9 +126,9 @@ export default class Sketch {
 
       tl.to(this.camera.position, {
         duration: 1,
-        x: Math.sin(radians) * 10, // Increased camera orbit radius
-        z: Math.cos(radians) * 10, // Increased camera orbit radius
-        y: 3, // Adjusted camera height for a better view
+        x: Math.sin(radians) * 15, // Increased camera orbit radius
+        z: Math.cos(radians) * 15, // Increased camera orbit radius
+        y: 5, // Adjusted camera height for a better view
         ease: "power1.inOut",
         onUpdate: () => {
           this.camera.lookAt(this.model.position);
@@ -143,7 +144,6 @@ export default class Sketch {
     });
   }
 
-
   stop() {
     this.paused = true;
   }
@@ -157,7 +157,6 @@ export default class Sketch {
     if (this.paused)
       return;
     this.time += 0.05;
-    this.material.uniforms.time.value = this.time;
     this.controls.update();
     requestAnimationFrame(this.render.bind(this));
     this.renderer.render(this.scene, this.camera);
