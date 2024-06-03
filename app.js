@@ -24,17 +24,17 @@ export default class Sketch {
     this.container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(
-      70,
+      90, // Increased FOV for a wider view
       window.innerWidth / window.innerHeight,
       0.001,
       1000
     );
-    this.camera.position.set(1, -2, 3); // Adjusted camera position
+    this.camera.position.set(1, -2, 3); // Adjusted camera position for a better initial view
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.25;
-    this.controls.enableZoom = false;
+    this.controls.enableZoom = true; // Allow zoom for better viewing
 
     this.time = 0;
     this.paused = false;
@@ -48,8 +48,8 @@ export default class Sketch {
     this.loader.load(model, (gltf) => {
       this.model = gltf.scene;
       this.scene.add(this.model);
-      this.model.scale.set(0.5, 0.5, 0.5);
-      this.model.position.set(0, -0.6, 0);
+      this.model.scale.set(0.9, 0.9, 0.9);
+      this.model.position.set(1, -0.6, 0);
       gltf.scene.traverse((o) => {
         if (o.isMesh) {
           o.material = this.material;
@@ -125,10 +125,9 @@ export default class Sketch {
 
       tl.to(this.camera.position, {
         duration: 1,
-        x: Math.sin(radians) * 5, // Increased camera orbit radius
-        z: Math.cos(radians) * 5, // Increased camera orbit radius
-        y: 0,
-        fov: 60, // Adjusted camera field of view
+        x: Math.sin(radians) * 10, // Increased camera orbit radius
+        z: Math.cos(radians) * 10, // Increased camera orbit radius
+        y: 3, // Adjusted camera height for a better view
         ease: "power1.inOut",
         onUpdate: () => {
           this.camera.lookAt(this.model.position);
@@ -159,6 +158,7 @@ export default class Sketch {
       return;
     this.time += 0.05;
     this.material.uniforms.time.value = this.time;
+    this.controls.update();
     requestAnimationFrame(this.render.bind(this));
     this.renderer.render(this.scene, this.camera);
   }

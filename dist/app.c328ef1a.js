@@ -44360,13 +44360,16 @@ var Sketch = exports.default = /*#__PURE__*/function () {
     this.renderer.setClearColor("black", 1);
     this.container = document.getElementById("container");
     this.container.appendChild(this.renderer.domElement);
-    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.001, 1000);
-    this.camera.position.set(1, -2, 3); // Adjusted camera position
+    this.camera = new THREE.PerspectiveCamera(90,
+    // Increased FOV for a wider view
+    window.innerWidth / window.innerHeight, 0.001, 1000);
+    this.camera.position.set(1, -2, 3); // Adjusted camera position for a better initial view
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.25;
-    this.controls.enableZoom = false;
+    this.controls.enableZoom = true; // Allow zoom for better viewing
+
     this.time = 0;
     this.paused = false;
     this.setupResize();
@@ -44377,8 +44380,8 @@ var Sketch = exports.default = /*#__PURE__*/function () {
     this.loader.load(_model.default, function (gltf) {
       _this.model = gltf.scene;
       _this.scene.add(_this.model);
-      _this.model.scale.set(0.5, 0.5, 0.5);
-      _this.model.position.set(0, -0.6, 0);
+      _this.model.scale.set(0.9, 0.9, 0.9);
+      _this.model.position.set(1, -0.6, 0);
       gltf.scene.traverse(function (o) {
         if (o.isMesh) {
           o.material = _this.material;
@@ -44462,13 +44465,12 @@ var Sketch = exports.default = /*#__PURE__*/function () {
         var radians = angle * (Math.PI / 180);
         tl.to(_this2.camera.position, {
           duration: 1,
-          x: Math.sin(radians) * 5,
+          x: Math.sin(radians) * 10,
           // Increased camera orbit radius
-          z: Math.cos(radians) * 5,
+          z: Math.cos(radians) * 10,
           // Increased camera orbit radius
-          y: 0,
-          fov: 60,
-          // Adjusted camera field of view
+          y: 3,
+          // Adjusted camera height for a better view
           ease: "power1.inOut",
           onUpdate: function onUpdate() {
             _this2.camera.lookAt(_this2.model.position);
@@ -44499,6 +44501,7 @@ var Sketch = exports.default = /*#__PURE__*/function () {
       if (this.paused) return;
       this.time += 0.05;
       this.material.uniforms.time.value = this.time;
+      this.controls.update();
       requestAnimationFrame(this.render.bind(this));
       this.renderer.render(this.scene, this.camera);
     }
@@ -44530,7 +44533,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56913" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59060" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];
